@@ -1,6 +1,6 @@
 from random import random, randint
 from heapq import nlargest
-from server.app import Product
+from server.product import Product
 
 # Kilometers in one degree of latitude,
 # or in one degree ot longitude at equator.

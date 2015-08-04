@@ -1,5 +1,5 @@
 from helpers import *
-from server.app import Product, PopularProductsService
+from server.product import Product, PopularProductsService
 
 def test_can_find_most_popular_products():
     products = [gen_products(shop_id, 10) for shop_id in range(10)]

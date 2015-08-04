@@ -1,6 +1,6 @@
 from helpers import *
 from sys import maxint
-from server.app import Product, PopularProductsService, PopularProductsIterator
+from server.product import Product, PopularProductsIterator
 
 def test_iterator_orders_products_by_popularity():
     shop_ids = range(10)
