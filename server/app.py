@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
 
 import os
+import numpy as np
 from flask import Flask
 from server.api import api
 from scipy.spatial import KDTree
 from rbtree import rbtree
+from geopy.distance import distance as geo_dist
+from math import pi, sin, cos, sqrt, radians
+from random import randint, random
 
 def create_app(settings_overrides=None):
     app = Flask(__name__)
@@ -117,16 +121,36 @@ class ShopRepository(object):
     def _find_shop_locations(self, location, distance):
         """ Perform the actual range search.            
             
+            Parameters
+            ----------
+            location : tuple of len 2
+                The longitude and latitude of the location used for range search.
+            distance : float
+                Distance in kilometers.
+            
         """
-        # Convert kilometers to degrees
-        # since locations in index are in GPS format.
-        distance = float(distance) / 111111
+        # Convert distance to longitude degrees at `location` latitude.
+        # Motivation:
+        # In GPS, as latitude increases,
+        # the distance per degree of longitude decreases.
+        # Hence, near the poles `distance`
+        # equals more degrees than on the equator.
+        # This must be taken into account since KDTree
+        # computes Eucledian distance on the GPS locations.
+        degrees = distance / (111.111 * cos(radians(location[0])))
         
-        # Find the indices of the shop locations within `distance` of `location`.
-        loc_idx = self._loc_index.query_ball_point(location, distance)
+        # Account for calculated distance deviation,
+        # between geopy.distance.distance and the 111.111 method.
+        degrees *= 1.01
         
-        # Return the locations of the shops found.
-        return [self._loc_data[i] for i in loc_idx]
+        # Perform the actual range search
+        loc_idx = self._loc_index.query_ball_point(location, degrees)
+        locations = [self._loc_data[i] for i in loc_idx]
+        
+        # Filter any locations that got in the result set,
+        # because of the enlarged distance.
+        return filter(lambda l: geo_dist(location, l) <= distance, locations)
+        
     
     def _has_shop_any_tag(self, shop_id, tags_to_shops):
         """ Checks if a shop has at least one of the specified tags.
@@ -349,4 +373,76 @@ class Product(object):
     def __str__(self):
         return "Product: id:{0}, shop_id:{1}, title:{2}, populariy:{3}, quantity:{4}".format(
             self.id, self.shop_id, self.title, self.popularity, self.quantity)
+
+class Location(object):
+    
+    km_per_degree = 111.111
+    
+    def __init__(self, lat, lon):
+        """ Represents GPS coordinates.
+        
+        """
+        # Latitude
+        self.lat = lat
+        
+        # Longitude
+        self.lon = lon
+    
+    def add(self, offsetLat, offsetLon):
+        """ Creates a new location at offset of the original one.
+            
+            Parameters
+            ----------
+            offsetLat : float
+                Latitude offset in kilometers.
+            offsetLon : float
+                Lattitude offset in kilometers.
+                
+            Returns
+            -------
+            location : Location
+                The new location
+        """
+        
+        lat = self.lat + offsetLat / Location.km_per_degree
+        lon = self.lon + offsetLon / (Location.km_per_degree  * cos(radians(lat)))
+        return Location(lat, lon)
+    
+    def nearby(self, radius):
+        """ Computes a random point within radius.
+        
+            Due to west-east shrinking, it can break the radius at high latitude.
+            For correct results, use within degrees: -75 < latitude < 75.
+            [more info](http://gis.stackexchange.com/questions/25877/how-to-generate-random-locations-nearby-my-location)
+            
+            Parameters
+            ----------
+            radius : float
+                The limiting radius in kilometers.
+        """
+        # 
+        radius /= Location.km_per_degree
+        u = random()
+        v = random()
+        w = radius*sqrt(u)
+        t = 2*pi*v
+        x = w*cos(t)
+        y = w*sin(t)
+        x /= cos(radians(self.lat))
+        return Location(self.lat + y, self.lon + x)
+    
+    def data(self):
+        return self.lat, self.lon
+    
+    @staticmethod
+    def rand():
+        lat = random() * 90 * 1 if randint(0,1) % 2 == 0 else -1
+        lon = random() * 180 * 1 if randint(0,1) % 2 == 0 else -1
+        return Location(lat, lon)
+    
+    def __repr__(self):
+        return self.__str__()
+        
+    def __str__(self):
+        return "Point lat: {0} lon: {1}".format(self.lat, self.lon)
 

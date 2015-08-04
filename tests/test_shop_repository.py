@@ -1,34 +1,38 @@
-from server.app import Shop, ShopRepository
-from numpy import mgrid, ravel
-from helpers import *
+from numpy import median
+from geopy.distance import distance as geo_dist
+from server.app import Shop, ShopRepository, Location
 
+# Distance in kilometers
+max_distance = 100
+shop_count = 200
 
 def test_can_find_shops_within_distance():
-    distance = 1000
-    center_loc = Location.rand()
-    far_away_loc = center_loc.add(distance*2+1, 0)
+    center_loc = Location(0, 20)
+    locations = [center_loc.nearby(max_distance) for x in range(shop_count)]
+    shops = [new_shop(loc) for loc in locations]
+    sut = ShopRepository(shops)
     
-    nearby_shops = [new_shop(center_loc.new(distance)) for x in range(5)]
-    far_away_shops = [new_shop(far_away_loc.new(distance)) for x in range(100)]
+    medianDistance = median([geo_dist(loc.data(), center_loc.data()) for loc in locations])
     
-    sut = ShopRepository(nearby_shops + far_away_shops)
-    result = sut.find_shops(center_loc.data(), distance)
-    
-    assert set(nearby_shops) == set(result)
+    expected = [shop for shop in shops if geo_dist(center_loc.data(), shop.location()) <= medianDistance]
+    actual = sut.find_shops(center_loc.data(), medianDistance.kilometers)
+   
+    assert set(expected) == set(actual)
 
 
 def test_can_filter_shops_by_tag():
-    distance = 1000
     tag = 'outwear'
-    center_loc = Location.rand()
-    locations = [center_loc.new(distance) for x in range(10)]
+    center_loc = Location(0,0)
+    locations = [center_loc.nearby(max_distance) for x in range(shop_count)]
     shops = [new_shop(loc) for loc in locations]
-    taggings = [(tag, get_id(locations[i])) for i in range(5)]
+    taggings = [(tag, get_id(locations[i])) for i in range(shop_count/2)]
     
     sut = ShopRepository(shops, taggings)
-    result = sut.find_shops(center_loc.data(), distance, [tag])
     
-    assert set(shops[0:5]) == set(result)
+    expected = shops[0:shop_count/2]
+    actual = sut.find_shops(center_loc.data(), max_distance, [tag])
+    
+    assert set(expected) == set(actual)
 
 def new_shop(loc):
     return Shop(get_id(loc), loc.lat, loc.lon)
