@@ -16,8 +16,11 @@ def search():
     lat = request.args.get('lat', 0, float)
     lon = request.args.get('lon', 0, float)
     distance = request.args.get('d', 10, float)
-    tags = request.args.get('tags', None, list)
+    tags = request.args.get('tags', None, str)
     count = request.args.get('n', 100, int)
+
+    if bool(tags):
+        tags = tags.split(',')
 
     shops = current_app.shop_repo.find_shops((lat, lon), distance, tags)
     products = current_app.prod_service.find_popular_products([s.id for s in shops], count)
