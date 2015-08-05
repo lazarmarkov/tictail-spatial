@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from flask import Blueprint, current_app, jsonify, request
-import flask
 
 api = Blueprint('api', __name__)
 
@@ -33,7 +32,19 @@ def search():
     return resp
 
 
-def serialize(product, shops):
-    d = product.serialize()
-    d['shop'] = shops[product.shop_id].serialize()
-    return d
+def serialize(p, shops):
+    s = shops[p.shop_id]
+    return {
+        'id': p.id,
+        'shop_id': p.shop_id,
+        'title': p.title,
+        'popularity': p.popularity,
+        'quantity': p.quantity,
+        'shop': {
+            'id': s.id,
+            'lat': s.location[0],
+            'lng': s.location[1],
+            'name': s.name
+        }
+    }
+

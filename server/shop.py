@@ -149,10 +149,3 @@ class Shop(object):
         # Name of the shop.
         self.name = name
 
-    def serialize(self):
-        return {
-            'id': self.id,
-            'lat': self.location[0],
-            'lng': self.location[1],
-            'name': self.name
-        }

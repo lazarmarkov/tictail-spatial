@@ -1,12 +1,13 @@
-from helpers import *
-from server.product import Product, PopularProductsService
+from server.product import PopularProductsService
+from tests.helpers import gen_products, flatten, most_popular
+
 
 def test_can_find_most_popular_products():
     products = [gen_products(shop_id, 10) for shop_id in range(10)]
     sut = PopularProductsService(flatten(products))
     
     expected = most_popular(products[2] + products[3] + products[5], 10)
-    actual = sut.find_popular_products([2,3,5], 10)
+    actual = sut.find_popular_products([2, 3, 5], 10)
     
     assert expected == actual
 

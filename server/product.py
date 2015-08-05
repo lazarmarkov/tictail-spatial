@@ -184,12 +184,3 @@ class Product(object):
     def __str__(self):
         return "Product: id:{0}, shop_id:{1}, title:{2}, populariy:{3}, quantity:{4}".format(
             self.id, self.shop_id, self.title, self.popularity, self.quantity)
-
-    def serialize(self):
-        return {
-            'id': self.id,
-            'shop_id': self.shop_id,
-            'title': self.title,
-            'popularity': self.popularity,
-            'quantity': self.quantity
-        }

@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import os
-import numpy as np
 import pandas as pd
 from flask import Flask
-from server.api import api, data_path
+from server.api import api
 from server.product import Product, PopularProductsService
 from server.shop import Shop, ShopRepository
 
