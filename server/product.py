@@ -1,5 +1,6 @@
 from rbtree import rbtree
 
+
 class PopularProductsService(object):
     
     def __init__(self, products):
@@ -17,7 +18,7 @@ class PopularProductsService(object):
         
         # Filter the out of stock products.
         products = filter(lambda p: p.quantity > 0, products)
-        
+
         for p in products:
             products = self._get_products_by_shop(p.shop_id)
             products[p.popularity] = p
@@ -25,23 +26,23 @@ class PopularProductsService(object):
     def _get_products_by_shop(self, shop_id):
         """ Returns a list of products for the `shop id`, ordered by popularity.
         
-            Parameters
-            ----------
-            shop_id : string
-                The id of the shop for which to get the products.
-            
-            Returns
-            -------
-            products : bst of Products
-                A red-black tree of Products, ordered by Product.popularity, in descending order.
-        
+        Parameters
+        ----------
+        shop_id : string
+            The id of the shop for which to get the products.
+
+        Returns
+        -------
+        products : rbtree of Products
+            A red-black tree of Products, ordered by Product.popularity, in descending order.
+
         """
         
         # Check if a mapping for the shop is missing.
         if shop_id not in self._products_by_shop:
             # Map the shop to an empty rbtree.
             self._products_by_shop[shop_id] = rbtree(
-                cmp = PopularProductsService._duplicate_reverse_order_comparer)
+                cmp=PopularProductsService._duplicate_reverse_order_comparer)
         
         # Return the products for the shop.
         return self._products_by_shop[shop_id]
@@ -68,21 +69,22 @@ class PopularProductsService(object):
         # Get an iterator for each list of products.
         iterators = [iter(products) for products in products_per_shop]
         
-        # Create a ad-hoc iterator,
-        # feeded with products iterators for the specified shops.
+        # Create a composite iterator,
+        # out of the products iterators
+        # for the specified shops.
         it = PopularProductsIterator(zip(shop_ids, iterators), count)
-        
-        # List the result.
+
+        # List the most popular products.
         return list(it)
     
     @staticmethod
     def _duplicate_reverse_order_comparer(x, y):
         """ A reverse order comparer that allows duplicate entries.
-        If two items are equal it declares the first one larger.
+        If two items are equal it declares the first one greater.
         
         """
         x = cmp(x, y)
-        if(x == 0):
+        if x == 0:
             return 1
         return -x
 
@@ -92,19 +94,19 @@ class PopularProductsIterator(object):
     def __init__(self, shops, count):
         """ Iterates products by popularity from multiple shops.
         
-            Parameters
-            ----------
-            shops : list of tuples
-                First item is id of the shop,
-                second item is an iterator to its products, ordered by Product.popularity.
-            count : int
-                The max number of products to return.
+        Parameters
+        ----------
+        shops : list of tuples
+            First item is id of the shop,
+            second item is an iterator to its products, ordered by Product.popularity.
+        count : int
+            The max number of products to return.
             
         """
-        # Mappings from shop id to an iterator to its products.
+        # Mappings from the shop's id to an iterator to its products.
         self._shops = dict(shops)
         
-        # Mappings from shop id to its current most popular product.
+        # Mappings from the shop's id to its current most popular product.
         self._most_popular_in_shop = {}
         
         # The number of products left to return.
@@ -137,21 +139,17 @@ class PopularProductsIterator(object):
     
     def next(self):
         """ Return the next most popular product with the shops.
-        
-            Returns
-            -------
-            product : Product
-                
+
         """
-        # If max number of products are returned
+        # If `count` products are returned
         # OR
-        # if there are no more products to return,
+        # no more products to return,
         # signal stop iteration.
         if self._count == 0 or not bool(self._most_popular_in_shop):
             raise StopIteration
         
         # Find the most popular product within the shops.
-        p = max(self._most_popular_in_shop.values(), key = lambda p: p.popularity)
+        p = max(self._most_popular_in_shop.values(), key=lambda p: p.popularity)
         
         # Mark the product as taken,
         # and move to the next one in the shop.
@@ -182,5 +180,5 @@ class Product(object):
         self.quantity = quantity
     
     def __str__(self):
-        return "Product: id:{0}, shop_id:{1}, title:{2}, populariy:{3}, quantity:{4}".format(
+        return "Product: id:{0}, shop_id:{1}, title:{2}, popularity:{3}, quantity:{4}".format(
             self.id, self.shop_id, self.title, self.popularity, self.quantity)
