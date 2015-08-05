@@ -43,3 +43,4 @@ def initialize(app):
 
     app.shop_repo = ShopRepository(shops, taggings)
     app.prod_service = PopularProductsService(products)
+    app.shops_by_id = {s.id: s for s in shops}

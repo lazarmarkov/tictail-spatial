@@ -157,7 +157,17 @@
     this.prefs = prefs;
 
     this.search = function(cb) {
-      // TODO: Implement this.
+      $.ajax({
+        dataType: "json",
+        url: 'http://localhost:5000/search',
+        data: {'lat': prefs.position.lat, 'lon': prefs.position.lng, 'd': prefs.radius/1000, 'tags': prefs.tags, 'n': prefs.count},
+        success: function (response) {
+          cb(null, response.products)
+        },
+        error: function(x, o, e){
+          cb(e, null)
+        }
+      });
     };
   };
 
